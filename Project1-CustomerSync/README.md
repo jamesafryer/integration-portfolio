@@ -68,6 +68,6 @@ Synchronization will be considered successful if the system can run most changes
 - docs/ will hold any design notes or supplemental/training docs
 - README explains project scope and purpose
 
-## Lessons Learned
+## Notes
 
-Will be updated as implementation progresses.
+For repeatable testing, the seed script explicitly assigns CustomerIDs even though the production schema supports auto-incrementing identifiers. This ensures that every execution recreates the same synchronization scenarios and allows deterministic testing of update logic.
