@@ -4,6 +4,10 @@
 
 Cedar Creek is a fictional veterinary practice that is looking to make navigation of their multiple systems more seamless and cohesive. This first project documents a relatively basic process of synchronizing records between two systems, one of which is the owner of the data. 
 
+## System Architecture
+
+![Customer Synchronization Architecture](diagrams/Synchronization%20Architecture.drawio.png)
+
 ## Business Context
 
 Cedar Creek is a relatively new veterinary practice, just expanding to their second clinic location. It has multiple software systems because the business has grown organically over time, and new systems were added as the need arose to transition to a digital format. 
@@ -110,7 +114,9 @@ Synchronization will be considered successful if the system can run most changes
 
 ### Expected Output
 
-![Synchronization Output](diagrams/synchronization-output.png)
+<p align="center">
+  <img src="diagrams/synchronization-output.png" alt="Synchronization Output" width="400">
+</p>
 
 After execution, open 'Billing.db' in DB Browser for SQLite to verify that:
 
