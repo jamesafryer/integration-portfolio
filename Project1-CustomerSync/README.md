@@ -39,7 +39,9 @@ This separation of ownership is defined so that discrepancies can be handled pre
 
 ## Synchronization Strategy
 
-Say, for example, a customer needs to change their phone number. The receptionist changes the information in the Customer Management system, which creates a patch update for the billing system, including a version number, the field(s) changed, and the customer's unique identifier. The billing system checks those records against the version number currently stored locally, and the newer version is what ends up being stored locally. 
+Say, for example, a customer needs to change their phone number. The receptionist changes the information in the Customer Management system. When customer information changes within the Customer Management system, the synchronization process compares the customer's current version against the version stored in Billing. If the source version is newer, the Billing record is updated. New customers are created automatically, unchanged records are skipped, and orphaned Billing records are identified for administrative review.
+
+To demonstrate resilience, the project also includes a configurable simulated outage. Synchronization attempts that fail during the outage are placed into a deferred retry queue and automatically processed once communication is restored.
 
 Exceptional Cases:
 If the same update arrives twice, it can be treated as a duplicate and not reapplied.
@@ -49,25 +51,97 @@ Failed updates can be put into a deferred queue to be retried and reconciled.
 
 Synchronization will be considered successful if the system can run most changes on its own without needing manual input or troubleshooting outside of extremely exceptional cases.
 
-## Planned Implementation
+## Implementation Status
 
-- Create SQLite databases
-- Seed sample customers and billing customer snapshots
-- Write basic synchronization
-- Add field mapping
-- Add version checks
-- Add duplicate/stale handling
-- Add deferred/recovery logic
-- Replace simulated handoff with API communication
+- ✅ SQLite databases created to simulate Customer Management and Billing systems
+- ✅ Repeatable seed script for deterministic testing
+- ✅ Customer synchronization with whole-record version comparison
+- ✅ Field mapping between source and destination systems
+- ✅ Duplicate and stale update handling through version checks
+- ✅ Structured synchronization logging
+- ✅ Deferred retry queue for simulated temporary outages
+- ⏳ API-based communication (planned for Project 3)
 
 ## Repository Structure
 
 - src/ is code
-- data/ will hold databases and sample data
-- diagrams/ will hold project visualizations that could be distributed to internal team members or customer employees
-- docs/ will hold any design notes or supplemental/training docs
+- data/ contains databases and sample data
+- diagrams/ contains project visualizations that could be distributed to internal team members or customer employees
+- docs/ contains design notes, implementation decisions, and observations gathered during development
 - README explains project scope and purpose
 
-## Notes
+## Running the Project
 
-For repeatable testing, the seed script explicitly assigns CustomerIDs even though the production schema supports auto-incrementing identifiers. This ensures that every execution recreates the same synchronization scenarios and allows deterministic testing of update logic.
+### Prerequisites
+ 
+ - Python 3.10+
+ - DB Browser for SQLite (recommended for inspecting the databases)
+ - Git (optional, for cloning the repository)
+
+1. Clone this repository. 
+2. Navigate to the project source directory.
+3. Seed both databases with sample data:
+    
+    **macOS / Linux**
+
+    ```bash
+    python3 seed_data.py
+    ```
+    
+    **Windows**
+
+    ```powershell
+    python seed_data.py
+    ```
+
+4. Run the synchronization:
+    
+    **macOS / Linux**
+
+    ```bash
+    python3 seed_data.py
+    ```
+    
+    **Windows**
+
+    ```powershell
+    python seed_data.py
+    ```
+
+### Expected Output
+
+![Synchronization Output](diagrams/synchronization-output.png)
+
+After execution, open 'Billing.db' in DB Browser for SQLite to verify that:
+
+![Billing Output](diagrams/billing-outcome.png)
+- Emily Carter's phone number has been updated
+- Sarah Thompson's email has been updated
+- Olivia Brooks has been added
+- Robert Evans remains as an orphaned record
+- 'LastSyncedAt' has been updated for synchronized records
+
+### Simulating an Outage
+
+The synchronization engine includes an optional outage simulation for demonstrating deferred retry behavior.
+
+Within `sync_customers.py`:
+
+```python
+SIMULATE_OUTAGE = True
+```
+
+When enabled:
+
+- Customer ID 3 is intentionally deferred during the initial synchronization pass.
+- The deferred queue is automatically retried once the simulated outage ends.
+- The console report displays deferred and retry activity.
+
+Setting the value to `False` disables the simulation and performs a normal synchronization.
+
+## Current Limitations
+
+- Synchronization currently uses whole-record versioning rather than field-level version tracking.
+- Orphaned records are reported for administrative review but are not automatically archived or removed.
+- Communication between systems is simulated locally using SQLite before introducing API-based integration.
+- The retry queue is demonstrated through configurable outage simulation rather than external messaging infrastructure.
