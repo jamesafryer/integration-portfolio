@@ -1,2 +1,11 @@
 # macOS
 .DS_Store
+# Python
+__pycache__/
+*.py[cod]
+# SQLite Browser
+*.sqbpro
+# VS Code
+.vscode/
+# PyCharm
+.idea/
