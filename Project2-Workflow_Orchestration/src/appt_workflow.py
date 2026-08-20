@@ -60,7 +60,7 @@ def validate_patient(patient_cursor, req_patient_id, req_customer_id):
 
 def prepare_appt_details(appt_cursor, req_appt_type_id, req_start_time):
     appt_cursor.execute('''
-        SELECT * FROM AppointmentTypes WHERE AppointmentTypeID = ? ''',
+        SELECT Name, DurationMinutes, BaseCharge FROM AppointmentTypes WHERE AppointmentTypeID = ? ''',
         (req_appt_type_id,))
     appointment = appt_cursor.fetchone()
     if appointment is None:
@@ -68,7 +68,7 @@ def prepare_appt_details(appt_cursor, req_appt_type_id, req_start_time):
             'success': False,
             'reason': 'Appointment type is invalid.'
         }
-    _, appt_type_name, duration_minutes, base_charge = appointment
+    appt_type_name, duration_minutes, base_charge = appointment
     start_time = datetime.strptime(
         req_start_time,
         '%Y-%m-%d %H:%M:%S'
@@ -153,7 +153,7 @@ def validate_provider_availability(appt_cursor, req_provider_id, appt_details):
 
 def create_appt(appt_cursor, request, appt_details):
     appt_cursor.execute('SELECT MAX(AppointmentID) FROM Appointments')
-    max_id = appt_cursor.fetchone() [0]
+    max_id = appt_cursor.fetchone()[0]
     if max_id is None:
         new_appt_id = 5001
     else:
@@ -171,7 +171,7 @@ def create_appt(appt_cursor, request, appt_details):
 
 def create_pending_charge(billing_cursor, created_appt, appt_details):
     billing_cursor.execute('SELECT MAX(ChargeID) FROM PendingCharges')
-    max_id = billing_cursor.fetchone() [0]
+    max_id = billing_cursor.fetchone()[0]
     if max_id is None:
         new_charge_id = 7001
     else:
@@ -287,7 +287,7 @@ def print_deferred(deferred_item):
         f"Request {deferred_item['request']['RequestID']}\n\n"
         'DEFERRED\n\n'
         f"Reason: {deferred_item['reason']}\n"
-        'Action: No action required; retry scheduled automatically'
+        'Action: No action required; retry scheduled automatically\n'
     )
 
 def print_retry_results(result):
@@ -371,6 +371,7 @@ def main():
 
     for item in pending_queue:
         print(
+            '==================================\n'
             f"Request {item['request']['RequestID']} could not be completed at this time.\n"
             'RETRY PENDING\n\n'
             f"Reason: {item['reason']}\n"

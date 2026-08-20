@@ -67,3 +67,115 @@ If a temporary system outage prevents validation from completing, the request is
 
 The workflow is considered successful only after all required validation steps have completed and every participating system has received the records it is responsible for.
 
+## Workflow Architecture
+
+The orchestration layer coordinates communication between four independent business systems while allowing each system to remain responsible for the data it owns.
+
+![Workflow Architecture](diagrams/Workflow%20Architecture.png)
+
+## Planned Implementation
+
+- Validate customer identity through Customer Management.
+- Validate patient ownership and active status through Patient Records.
+- Retrieve appointment metadata from Appointment Scheduling.
+- Calculate appointment end time using appointment duration.
+- Validate provider availability.
+- Detect duplicate appointment requests.
+- Create appointment records for successful requests.
+- Create downstream billing references for completed appointments.
+- Simulate temporary system outages.
+- Automatically retry deferred requests after simulated recovery.
+- Produce operational reporting summarizing workflow outcomes.
+
+## Workflow Logic
+
+The following flow diagram illustrates the order in which business rules are evaluated, where requests may terminate, and how deferred requests are automatically retried after simulated system recovery.
+
+![Workflow Logic](diagrams/Workflow%20Logic.png)
+
+## Repository Structure
+
+- `src/` contains the orchestration workflow, sample requests, and supporting scripts.
+- `data/` contains SQLite databases representing each business system.
+- `diagrams/` contains workflow and architecture diagrams.
+- `docs/` contains supplemental engineering notes and design decisions.
+- `README.md` documents project scope, architecture, execution, and expected behavior.
+
+## Running the Project
+
+### Prerequisites
+
+- Python 3.10+
+- DB Browser for SQLite (recommended for inspecting databases)
+- Git (optional)
+
+1. Clone the repository.
+2. Navigate to the project source directory.
+3. Seed the databases:
+
+```bash
+python3 seed_data.py      # macOS / Linux
+python seed_data.py       # Windows
+```
+
+4. Execute the workflow:
+
+```bash
+python3 appointment_workflow.py     # macOS / Linux
+python appointment_workflow.py      # Windows
+```
+
+Expected behavior:
+
+- One appointment request completes successfully.
+- Four requests fail business validation.
+- One request is deferred because of a simulated Patient Records outage.
+- The deferred request is automatically retried after simulated recovery.
+- Successful requests create both appointment and billing records.
+- A workflow summary is displayed after all requests have been processed.
+
+## Sample Workflow Execution
+
+Running the workflow processes each appointment request independently, reports validation failures immediately, automatically retries deferred requests after simulated recovery, and finishes with an operational summary.
+
+![Workflow Output](diagrams/Workflow%20Output.png)
+
+## Business Rules
+
+The orchestration workflow enforces the following business rules before creating an appointment:
+
+- Customer must exist and be active.
+- Patient must exist.
+- Patient must belong to the selected customer.
+- Patient must be active.
+- Appointment type must exist.
+- Provider must exist.
+- Provider must belong to the selected clinic.
+- Provider must be active.
+- Duplicate appointments are rejected.
+- Providers cannot be scheduled for overlapping appointments.
+- Billing records are created only after a successful appointment is created.
+
+## Current Limitations
+
+- Inter-system communication is simulated directly through SQLite databases rather than REST APIs.
+- Workflow execution is initiated manually rather than by an external scheduling application.
+- Provider availability considers only existing scheduled appointments and does not model calendars, breaks, or clinic hours.
+- Billing records are created immediately after appointment creation without transactional rollback across systems.
+- Retry behavior simulates a single temporary outage scenario rather than a persistent background retry service.
+- Authentication, authorization, logging, and audit trails are outside the scope of this project.
+
+## Resulting Appointment Records
+
+Successful requests create appointment records within the Appointment Scheduling system while rejected requests leave scheduling data unchanged.
+
+The screenshot below shows the resulting appointment table after workflow execution.
+
+![Appointments Table](diagrams/Appointments%20Outcome.png)
+
+## Relationship to Project 1
+
+This project assumes that customer information has already been synchronized between Customer Management and Billing, as implemented in Project 1.
+
+Rather than focusing on keeping data synchronized, this project demonstrates how multiple systems can be coordinated to complete a business process while respecting system ownership, enforcing business rules, and handling transient system failures.
+
